@@ -1,0 +1,48 @@
+extern crate logos;
+
+use logos::Logos;
+
+#[derive(Logos, Debug, PartialEq)]
+enum TokenType {
+    #[end]
+    End,
+    #[error]
+    Error,
+
+    #[token = "int"]
+    IntKeyword,
+
+    #[regex = "[a-zA-Z]+"]
+    FunctionName,
+
+    #[token = "("]
+    OpenParen,
+    #[token = ")"]
+    CloseParen,
+    #[token = "{"]
+    OpenBracket,
+    #[token = "}"]
+    CloseBracket,
+
+    #[token = "return"]
+    ReturnStatement,
+    #[token = ";"]
+    SemiColon,
+
+    #[token = "[0-9]+"]
+    IntLiteral,
+}
+
+fn main() {
+    let mut lexer = TokenType::lexer("Create ridiculously fast Lexers.");
+
+    loop {
+        match lexer.token {
+            TokenType::End => break,
+            TokenType::Error => break,
+            _ => println!("{:?}", lexer.token),
+        }
+
+        lexer.advance();
+    }
+}

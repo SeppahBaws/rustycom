@@ -1,0 +1,8 @@
+[package]
+name = "rustycom"
+version = "0.1.0"
+authors = ["Seppe Dekeyser <seppe@dva.be>"]
+edition = "2018"
+
+[dependencies]
+logos = "0.9.7"
