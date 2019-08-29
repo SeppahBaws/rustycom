@@ -17,13 +17,26 @@ impl Program {
         }
     }
 
-    pub fn get_func(&self) -> &Function {
-        &self.function
-    }
-
     pub fn parse(tokens: &mut VecDeque<Token>) -> Self {
         let func = Function::parse(tokens);
         Program::new(func)
+    }
+
+    pub fn to_asm(&self) -> String {
+        let mut asm = String::new();
+
+        /*
+         * the "program" bit of assembly only has to define the start function:
+         * .globl main
+         * <program contents>
+         */
+        asm.push_str(" .globl ");
+        asm.push_str(&self.function.identifier);
+        asm.push('\n');
+        asm.push_str(&self.function.to_asm());
+        asm.push('\n');
+
+        asm
     }
 }
 
@@ -39,14 +52,6 @@ impl Function {
             identifier: id.clone(),
             statement: ret,
         }
-    }
-
-    pub fn get_identifier(&self) -> &String {
-        &self.identifier
-    }
-
-    pub fn get_statement(&self) -> &Return {
-        &self.statement
     }
 
     pub fn parse(tokens: &mut VecDeque<Token>) -> Self {
@@ -86,6 +91,21 @@ impl Function {
 
         func
     }
+
+    pub fn to_asm(&self) -> String {
+        let mut asm = String::new();
+
+        /*
+         * a function may look like this:
+         * main:
+         *  <function body>
+         */
+        asm.push_str(&self.identifier);
+        asm.push_str(":\n");
+        asm.push_str(&self.statement.to_asm());
+
+        asm
+    }
 }
 
 #[derive(Debug)]
@@ -98,10 +118,6 @@ impl Return {
         Self {
             expression: exp,
         }
-    }
-
-    pub fn get_expression(&self) -> &IntConst {
-        &self.expression
     }
 
     pub fn parse(tokens: &mut VecDeque<Token>) -> Self {
@@ -126,6 +142,22 @@ impl Return {
 
         ret
     }
+
+    pub fn to_asm(&self) -> String {
+        let mut asm = String::new();
+        
+        /*
+         * Return statement looks like this:
+         * movl $2, %eax
+         * ret
+         */
+        asm.push_str(" movl $");
+        asm.push_str(&self.expression.val.to_string());
+        asm.push_str(", %eax\n");
+        asm.push_str(" ret");
+
+        asm
+    }
 }
 
 #[derive(Debug)]
@@ -138,10 +170,6 @@ impl IntConst {
         IntConst {
             val: v,
         }
-    }
-
-    pub fn get_value(&self) -> &i32 {
-        &self.val
     }
 
     pub fn parse(tokens: &mut VecDeque<Token>) -> Self {

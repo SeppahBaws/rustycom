@@ -8,6 +8,10 @@ mod token;
 mod ast;
 
 fn main() {
+    if cfg!(not(target_os = "linux")) {
+        panic!("this compiler currently only works on linux!");
+    }
+
     let args: Vec<String> = env::args().collect();
 
     let filename = &args[1];
@@ -25,12 +29,15 @@ fn main() {
     let prog = ast::Program::parse(&mut tokens);
     println!("Parsing done: {:?}", prog);
 
-    demo_generate_asm(&prog);
-    if cfg!(target_os = "linux") {
-        Command::new("gcc")
-                .arg("assembly.s")
-                .arg("-o out");
-    }
+    println!("Generating assembly...");
+    generate_asm(&prog);
+
+    println!("Compiling...");
+    Command::new("gcc")
+        .arg("assembly.s")
+        .arg("-o")
+        .arg("out")
+        .status().expect("Failed to compile with gcc");
 }
 
 fn read_string(filename: &String) -> String {
@@ -43,18 +50,16 @@ fn read_string(filename: &String) -> String {
     contents
 }
 
-fn demo_generate_asm(program: &ast::Program) {
+fn generate_asm(program: &ast::Program) {
+    // Get the assembly code from the program node
+    let contents = program.to_asm();
+    
+    // Write to file
     use std::error::Error;
-
     let mut file = match File::create("assembly.s") {
         Err(why) => panic!("Couldn't create file: {}", why.description()),
         Ok(file) => file,
     };
-
-    let func_name = program.get_func().get_identifier().to_owned();
-    let ret_val = program.get_func().get_statement().get_expression().get_value();
-    
-    let contents: String = format!(" .globl {}\n{}:\n movl ${}, %eax\n ret\n", func_name, func_name, ret_val);
     match file.write_all(contents.as_bytes()) {
         Err(why) => panic!("Couldn't write to file: {}", why.description()),
         Ok(_) => println!("Successfully wrote to file"),
