@@ -17,6 +17,10 @@ impl Program {
         }
     }
 
+    pub fn get_func(&self) -> &Function {
+        &self.function
+    }
+
     pub fn parse(tokens: &mut VecDeque<Token>) -> Self {
         let func = Function::parse(tokens);
         Program::new(func)
@@ -35,6 +39,14 @@ impl Function {
             identifier: id.clone(),
             statement: ret,
         }
+    }
+
+    pub fn get_identifier(&self) -> &String {
+        &self.identifier
+    }
+
+    pub fn get_statement(&self) -> &Return {
+        &self.statement
     }
 
     pub fn parse(tokens: &mut VecDeque<Token>) -> Self {
@@ -88,6 +100,10 @@ impl Return {
         }
     }
 
+    pub fn get_expression(&self) -> &IntConst {
+        &self.expression
+    }
+
     pub fn parse(tokens: &mut VecDeque<Token>) -> Self {
         let mut tok = tokens.pop_front().unwrap();
         if tok.token_type() != TokenType::ReturnKeyword {
@@ -122,6 +138,10 @@ impl IntConst {
         IntConst {
             val: v,
         }
+    }
+
+    pub fn get_value(&self) -> &i32 {
+        &self.val
     }
 
     pub fn parse(tokens: &mut VecDeque<Token>) -> Self {
