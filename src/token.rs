@@ -1,7 +1,7 @@
 extern crate logos;
 use logos::Logos;
 
-#[derive(Logos, Debug, PartialEq, Clone)]
+#[derive(Logos, Debug, PartialEq, Clone, Copy)]
 pub enum TokenType {
     #[end]
     End,
@@ -24,7 +24,7 @@ pub enum TokenType {
     CloseBracket,
 
     #[token = "return"]
-    ReturnStatement,
+    ReturnKeyword,
 
     #[regex = "[0-9]+"]
     IntLiteral,
@@ -48,11 +48,11 @@ impl Token {
         }
     }
 
-    pub fn token(self) -> String {
-        self.token
+    pub fn token(&self) -> String {
+        self.token.to_string()
     }
 
-    pub fn token_type(self) -> TokenType {
+    pub fn token_type(&self) -> TokenType {
         self.token_type
     }
 }

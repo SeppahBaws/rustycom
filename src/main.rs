@@ -19,10 +19,10 @@ fn main() {
 
 
     let mut tokens = rusty_lexer::RustyLexer::parse(contents.as_str());
-    println!("{:?}", tokens);
+    // println!("{:?}", tokens);
 
-    let first_token = tokens.pop_front().expect("Can't pop front");
-    println!("first token: {:?}", first_token);
+    let prog = ast::Program::parse(&mut tokens);
+    println!("Parsing done: {:?}", prog);
 }
 
 fn read_string(filename: &String) -> String {
