@@ -78,11 +78,11 @@ impl Function {
 
 #[derive(Debug)]
 pub struct Return {
-    expression: Expression,
+    expression: IntConst,
 }
 
 impl Return {
-    fn new(exp: Expression) -> Self {
+    fn new(exp: IntConst) -> Self {
         Self {
             expression: exp,
         }
@@ -100,7 +100,7 @@ impl Return {
         //     // TODO: fail
         // }
 
-        let exp = Expression::parse(tokens);
+        let exp = IntConst::parse(tokens);
         let ret = Return::new(exp);
 
         tok = tokens.pop_front().unwrap();
@@ -113,13 +113,13 @@ impl Return {
 }
 
 #[derive(Debug)]
-pub struct Expression {
+pub struct IntConst {
     val: i32,
 }
 
-impl Expression {
+impl IntConst {
     fn new(v: i32) -> Self {
-        Self {
+        IntConst {
             val: v,
         }
     }
@@ -132,6 +132,6 @@ impl Expression {
 
         let val: i32 = tok.token().parse().expect("Failed to parse string to int");
 
-        Expression::new(val)
+        IntConst::new(val)
     }
 }
