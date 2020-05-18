@@ -26,8 +26,11 @@ fn main() {
     let mut tokens = rusty_lexer::RustyLexer::parse(contents.as_str());
     // println!("{:?}", tokens);
 
-    let prog = ast::Program::parse(&mut tokens);
-    println!("Parsing done: {:?}", prog);
+    let prog = match ast::Program::parse(&mut tokens) {
+        Ok(program) => program,
+        Err(msg) => panic!(format!("Failed to parse program:\n{}", msg)),
+    };
+    println!("Parsing done: {:#?}", prog);
 
     println!("Generating assembly...");
     generate_asm(&prog);
@@ -55,13 +58,12 @@ fn generate_asm(program: &ast::Program) {
     let contents = program.to_asm();
     
     // Write to file
-    use std::error::Error;
     let mut file = match File::create("assembly.s") {
-        Err(why) => panic!("Couldn't create file: {}", why.description()),
+        Err(why) => panic!("Couldn't create file: {}", why),
         Ok(file) => file,
     };
     match file.write_all(contents.as_bytes()) {
-        Err(why) => panic!("Couldn't write to file: {}", why.description()),
+        Err(why) => panic!("Couldn't write to file: {}", why),
         Ok(_) => println!("Successfully wrote to file"),
     }
 }

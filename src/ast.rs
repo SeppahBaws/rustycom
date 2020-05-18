@@ -17,9 +17,13 @@ impl Program {
         }
     }
 
-    pub fn parse(tokens: &mut VecDeque<Token>) -> Self {
-        let func = Function::parse(tokens);
-        Program::new(func)
+    pub fn parse(tokens: &mut VecDeque<Token>) -> Result<Self, String> {
+        let func = match Function::parse(tokens) {
+            Ok(result) => result,
+            Err(msg) => return Err(msg),
+        };
+
+        Ok(Program::new(func))
     }
 
     pub fn to_asm(&self) -> String {
@@ -54,42 +58,45 @@ impl Function {
         }
     }
 
-    pub fn parse(tokens: &mut VecDeque<Token>) -> Self {
+    pub fn parse(tokens: &mut VecDeque<Token>) -> Result<Self, String> {
         let mut tok = tokens.pop_front().unwrap();
         if tok.token_type() != TokenType::IntKeyword {
-            // TODO: fail
+            return Err(format!("Expected int token, got {}", tok.token_type()))
         }
 
         tok = tokens.pop_front().unwrap();
         if tok.token_type() != TokenType::Identifier {
-            // TODO: fail
+            return Err(format!("Expected an identifier, got {}", tok.token_type()))
         }
         let function_identifier = String::from(tok.token());
 
         tok = tokens.pop_front().unwrap();
         if tok.token_type() != TokenType::OpenParen {
-            // TODO: fail
+            return Err(format!("Expected an open paren, got {}", tok.token_type()))
         }
 
         tok = tokens.pop_front().unwrap();
         if tok.token_type() != TokenType::CloseParen {
-            // TODO: fail
+            return Err(format!("Expected a close paren, got {}", tok.token_type()))
         }
 
         tok = tokens.pop_front().unwrap();
         if tok.token_type() != TokenType::OpenBracket {
-            // TODO: fail
+            return Err(format!("Expected an open bracket, got {}", tok.token_type()))
         }
 
-        let ret = Return::parse(tokens);
+        let ret = match Return::parse(tokens) {
+            Ok(value) => value,
+            Err(msg) => return Err(msg),
+        };
         let func = Function::new(&function_identifier, ret);
 
         tok = tokens.pop_front().unwrap();
         if tok.token_type() != TokenType::CloseBracket {
-            // TODO: fail
+            return Err(format!("Expected a close bracket, got {}", tok.token_type()));
         }
 
-        func
+        Ok(func)
     }
 
     pub fn to_asm(&self) -> String {
@@ -120,27 +127,24 @@ impl Return {
         }
     }
 
-    pub fn parse(tokens: &mut VecDeque<Token>) -> Self {
+    pub fn parse(tokens: &mut VecDeque<Token>) -> Result<Self, String> {
         let mut tok = tokens.pop_front().unwrap();
         if tok.token_type() != TokenType::ReturnKeyword {
-            // TODO: fail
+            return Err(format!("Expected a return keyword, got {}", tok.token_type()));
         }
 
-        // TODO: check the type of the next token without having to pop it twice
-        // tok = tokens.pop_front().unwrap();
-        // if tok.token_type() != TokenType::IntLiteral {
-        //     // TODO: fail
-        // }
-
-        let exp = IntConst::parse(tokens);
+        let exp = match IntConst::parse(tokens) {
+            Ok(expression) => expression,
+            Err(msg) => return Err(msg),
+        };
         let ret = Return::new(exp);
 
         tok = tokens.pop_front().unwrap();
         if tok.token_type() != TokenType::SemiColon {
-            // TODO: fail
+            return Err(format!("Expected a semicolon, got {}", tok.token_type()));
         }
 
-        ret
+        Ok(ret)
     }
 
     pub fn to_asm(&self) -> String {
@@ -172,14 +176,17 @@ impl IntConst {
         }
     }
 
-    pub fn parse(tokens: &mut VecDeque<Token>) -> Self {
+    pub fn parse(tokens: &mut VecDeque<Token>) -> Result<Self, String> {
         let tok = tokens.pop_front().unwrap();
         if tok.token_type() != TokenType::IntLiteral {
-            // TODO: fail
+            return Err(format!("Expected int token, got {}", tok.token_type()))
         }
 
-        let val: i32 = tok.token().parse().expect("Failed to parse string to int");
+        let val: i32 = match tok.token().parse() {
+            Ok(value) => value,
+            Err(msg) => return Err(format!("Failed to parse int: {}", msg)),
+        };
 
-        IntConst::new(val)
+        Ok(IntConst::new(val))
     }
 }
