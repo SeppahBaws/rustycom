@@ -11,19 +11,13 @@ pub struct Program {
 }
 
 impl Program {
-    fn new(func: Function) -> Self {
-        Self {
-            function: func,
-        }
-    }
-
     pub fn parse(tokens: &mut VecDeque<Token>) -> Result<Self, String> {
-        let func = match Function::parse(tokens) {
+        let function = match Function::parse(tokens) {
             Ok(result) => result,
             Err(msg) => return Err(msg),
         };
 
-        Ok(Program::new(func))
+        Ok(Self { function })
     }
 
     pub fn to_asm(&self) -> String {
@@ -51,13 +45,6 @@ pub struct Function {
 }
 
 impl Function {
-    fn new(id: &String, ret: Return) -> Self {
-        Self {
-            identifier: id.clone(),
-            statement: ret,
-        }
-    }
-
     pub fn parse(tokens: &mut VecDeque<Token>) -> Result<Self, String> {
         let mut tok = tokens.pop_front().unwrap();
         if tok.token_type() != TokenType::IntKeyword {
@@ -68,7 +55,7 @@ impl Function {
         if tok.token_type() != TokenType::Identifier {
             return Err(format!("Expected an identifier, got {}", tok.token_type()))
         }
-        let function_identifier = String::from(tok.token());
+        let identifier = String::from(tok.token());
 
         tok = tokens.pop_front().unwrap();
         if tok.token_type() != TokenType::OpenParen {
@@ -85,11 +72,11 @@ impl Function {
             return Err(format!("Expected an open bracket, got {}", tok.token_type()))
         }
 
-        let ret = match Return::parse(tokens) {
+        let statement = match Return::parse(tokens) {
             Ok(value) => value,
             Err(msg) => return Err(msg),
         };
-        let func = Function::new(&function_identifier, ret);
+        let func = Self { identifier, statement };
 
         tok = tokens.pop_front().unwrap();
         if tok.token_type() != TokenType::CloseBracket {
@@ -117,27 +104,21 @@ impl Function {
 
 #[derive(Debug)]
 pub struct Return {
-    expression: IntConst,
+    expression: Expression,
 }
 
 impl Return {
-    fn new(exp: IntConst) -> Self {
-        Self {
-            expression: exp,
-        }
-    }
-
     pub fn parse(tokens: &mut VecDeque<Token>) -> Result<Self, String> {
         let mut tok = tokens.pop_front().unwrap();
         if tok.token_type() != TokenType::ReturnKeyword {
             return Err(format!("Expected a return keyword, got {}", tok.token_type()));
         }
 
-        let exp = match IntConst::parse(tokens) {
+        let expression = match Expression::parse(tokens) {
             Ok(expression) => expression,
             Err(msg) => return Err(msg),
         };
-        let ret = Return::new(exp);
+        let ret = Self { expression };
 
         tok = tokens.pop_front().unwrap();
         if tok.token_type() != TokenType::SemiColon {
@@ -149,16 +130,117 @@ impl Return {
 
     pub fn to_asm(&self) -> String {
         let mut asm = String::new();
-        
+
         /*
          * Return statement looks like this:
          * movl $2, %eax
          * ret
          */
-        asm.push_str(" movl $");
-        asm.push_str(&self.expression.val.to_string());
-        asm.push_str(", %eax\n");
+        asm.push_str(&self.expression.to_asm());
         asm.push_str(" ret");
+
+        asm
+    }
+}
+
+#[derive(Debug)]
+pub struct Expression {
+    int_const: Option<Box<IntConst>>,
+    unary_op: Option<Box<(TokenType, Expression)>>,
+}
+
+impl Expression {
+    pub fn parse(tokens: &mut VecDeque<Token>) -> Result<Self, String> {
+        let tok = tokens.front().unwrap();
+
+        return match tok.token_type() {
+            TokenType::IntLiteral => {
+                let int = match IntConst::parse(tokens) {
+                    Ok(int) => int,
+                    Err(msg) => return Err(msg),
+                };
+
+                Ok(Self {
+                    int_const: Some(Box::new(int)),
+                    unary_op: None,
+                })
+            },
+            TokenType::LogicalNegation => {
+                let _ = tokens.pop_front().unwrap(); // pop the token from the front
+
+                let exp = match Expression::parse(tokens) {
+                    Ok(exp) => exp,
+                    Err(msg) => return Err(msg),
+                };
+
+                Ok(Self {
+                    int_const: None,
+                    unary_op: Some(Box::new((TokenType::LogicalNegation, exp))),
+                })
+            },
+            TokenType::Negation => {
+                let _ = tokens.pop_front().unwrap(); // pop the token from the front
+
+                let exp = match Expression::parse(tokens) {
+                    Ok(exp) => exp,
+                    Err(msg) => return Err(msg),
+                };
+
+                Ok(Self {
+                    int_const: None,
+                    unary_op: Some(Box::new((TokenType::Negation, exp)))
+                })
+            },
+            TokenType::BitwiseCompliment => {
+                let _ = tokens.pop_front().unwrap(); // pop the token from the front
+
+                let exp = match Expression::parse(tokens) {
+                    Ok(exp) => exp,
+                    Err(msg) => return Err(msg),
+                };
+
+                Ok(Self {
+                    int_const: None,
+                    unary_op: Some(Box::new((TokenType::BitwiseCompliment, exp))),
+                })
+            },
+            token_type => Err(format!("Failed to parse Expression, got {}", token_type)),
+        }
+    }
+
+    pub fn to_asm(&self) -> String {
+        let mut asm = String::new();
+
+        if self.int_const.is_some() {
+            asm.push_str(&self.int_const.as_ref().unwrap().to_asm());
+        } else if self.unary_op.is_some() {
+            // let a = *self.unary_op.unwrap();
+
+            let (tok_type, exp) = &**self.unary_op.as_ref().unwrap();
+
+            // let (tok_type, exp) = *self.unary_op.unwrap();
+            // let (tok_type, exp) = *self.unary_op.as_ref().unwrap();
+            // let a = self.unary_op.as_ref().unwrap().unbox();
+
+            // asm.push_str(&exp.to_asm());
+            // a.
+            asm.push_str(&exp.to_asm());
+
+            match tok_type {
+                TokenType::Negation => {
+                    asm.push_str(" neg %eax\n");
+                },
+                TokenType::BitwiseCompliment => {
+                    asm.push_str(" not %eax\n");
+                },
+                TokenType::LogicalNegation => {
+                    asm.push_str(" cmpl $0, %eax\n");
+                    asm.push_str(" movl $0, %eax\n");
+                    asm.push_str(" sete %al\n");
+                },
+                _ => {},
+            }
+        }
 
         asm
     }
@@ -170,16 +252,10 @@ pub struct IntConst {
 }
 
 impl IntConst {
-    fn new(v: i32) -> Self {
-        IntConst {
-            val: v,
-        }
-    }
-
     pub fn parse(tokens: &mut VecDeque<Token>) -> Result<Self, String> {
         let tok = tokens.pop_front().unwrap();
         if tok.token_type() != TokenType::IntLiteral {
-            return Err(format!("Expected int token, got {}", tok.token_type()))
+            return Err(format!("Expected int token, got {}", tok.token_type()));
         }
 
         let val: i32 = match tok.token().parse() {
@@ -187,6 +263,19 @@ impl IntConst {
             Err(msg) => return Err(format!("Failed to parse int: {}", msg)),
         };
 
-        Ok(IntConst::new(val))
+        Ok(Self { val })
+    }
+
+    pub fn to_asm(&self) -> String {
+        let mut asm = String::new();
+
+        /*
+         * To put an int in the EAX register looks like this:
+         * movl $2, %eax
+         */
+        asm.push_str(" movl $");
+        asm.push_str(&self.val.to_string());
+        asm.push_str(", %eax\n");
+        asm
     }
 }

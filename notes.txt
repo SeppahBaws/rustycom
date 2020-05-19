@@ -1,0 +1,16 @@
+AST:
+
+program = Program(function_declaration)
+function_declaration = Function(string, statement) // string is the function name
+statement = Return(exp)
+exp = UnOp(operator, exp) | Constant(int)
+
+============================================
+
+Grammar:
+
+<program> ::= <function>
+<function> ::= "int" <id> "(" ")" "{" <statement> "}"
+<statement> ::= "return" <exp> ";"
+<exp> ::= <unary_op> <exp> | <int>
+<unary_op> ::= "!" | "~" | "-"

@@ -31,6 +31,14 @@ pub enum TokenType {
 
     #[token = ";"]
     SemiColon,
+
+    // Unary operators
+    #[token = "-"]
+    Negation,
+    #[token = "~"]
+    BitwiseCompliment,
+    #[token = "!"]
+    LogicalNegation,
 }
 
 #[derive(Debug)]
@@ -60,17 +68,20 @@ impl Token {
 impl TokenType {
     fn get_display_name(&self) -> String {
         match self {
-            TokenType::End => { String::from("End") },
-            TokenType::Error => { String::from("Error") },
-            TokenType::IntKeyword => { String::from("IntKeyword") },
-            TokenType::Identifier => { String::from("Identifier") },
-            TokenType::OpenParen => { String::from("OpenParen") },
-            TokenType::CloseParen => { String::from("CloseParen") },
-            TokenType::OpenBracket => { String::from("OpenBracket") },
-            TokenType::CloseBracket => { String::from("CloseBracket") },
-            TokenType::ReturnKeyword => { String::from("ReturnKeyword") },
-            TokenType::IntLiteral => { String::from("IntLiteral") },
-            TokenType::SemiColon => { String::from("SemiColon") },
+            TokenType::End                 => { String::from("TokenType::End") },
+            TokenType::Error               => { String::from("TokenType::Error") },
+            TokenType::IntKeyword          => { String::from("TokenType::IntKeyword") },
+            TokenType::Identifier          => { String::from("TokenType::Identifier") },
+            TokenType::OpenParen           => { String::from("TokenType::OpenParen") },
+            TokenType::CloseParen          => { String::from("TokenType::CloseParen") },
+            TokenType::OpenBracket         => { String::from("TokenType::OpenBracket") },
+            TokenType::CloseBracket        => { String::from("TokenType::CloseBracket") },
+            TokenType::ReturnKeyword       => { String::from("TokenType::ReturnKeyword") },
+            TokenType::IntLiteral          => { String::from("TokenType::IntLiteral") },
+            TokenType::SemiColon           => { String::from("TokenType::SemiColon") },
+            TokenType::Negation            => { String::from("TokenType::Negation") },
+            TokenType::BitwiseCompliment   => { String::from("TokenType::BitwiseCompliment") },
+            TokenType::LogicalNegation     => { String::from("TokenType::LogicalNegation") },
         }
     }
 }
